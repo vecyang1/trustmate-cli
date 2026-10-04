@@ -1,0 +1,33 @@
+{
+  "name": "trustmate-cli",
+  "version": "1.0.0",
+  "description": "Agentic CLI and programmatic client for TrustMate.io reviews, widgets, quotas, and automation",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "trustmate": "./bin/trustmate.js"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "node bin/trustmate.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vecyang1/trustmate-cli.git"
+  },
+  "keywords": [
+    "trustmate",
+    "reviews",
+    "widgets",
+    "opencli",
+    "agentic",
+    "ecommerce",
+    "automation",
+    "cli"
+  ],
+  "author": "Vec Yang <vecyang1@users.noreply.github.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
