@@ -41,3 +41,6 @@ coverage/
 
 # Graphify Output
 graphify-out/
+
+# Test Evidence & Visual Dumps (github-ops Gate 2)
+evidence/

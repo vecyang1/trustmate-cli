@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { TrustMateClient } from '../src/index.js';
 import { TrustMateDirectClient } from '../src/direct-client.js';
+import { TrustMateOpenCliClient } from '../src/opencli-client.js';
 import { formatOutput } from '../src/formatters.js';
+import { assertSafeRoute, SecurityRouteDeniedError, SecurityGateError } from '../src/security-guard.js';
 
 test('TrustMateDirectClient - constructor options and defaults', () => {
   const client = new TrustMateDirectClient({
@@ -593,4 +596,394 @@ test('getReviewTemplates - adheres strictly to 0-exclamation-mark constraint acr
     }
   }
 });
+
+test('Security Route Denylist - method + path matching permits GET /subscription', async () => {
+  let fetchCalled = false;
+  const mockFetch = async (url, options = {}) => {
+    fetchCalled = true;
+    assert.equal(options.method || 'GET', 'GET');
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ items: [{ plan_name: 'AppSumo 1000 LTD', status: 'active' }] })
+    };
+  };
+
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: mockFetch
+  });
+
+  // Must cleanly pass security guard without error
+  assert.doesNotThrow(() => assertSafeRoute('GET', '/panel/api/account/27487/subscription'));
+  assert.doesNotThrow(() => assertSafeRoute('GET', '/panel/api/subscription'));
+
+  const sub = await client.getSubscription(27487);
+  assert.equal(fetchCalled, true, 'GET request must reach the network fetch dispatch');
+  assert.equal(sub.plan_name, 'AppSumo 1000 LTD');
+});
+
+test('Security Route Denylist - blocks dangerous mutations across root and account-nested paths', async () => {
+  const blockedMutations = [
+    { method: 'POST', path: '/panel/api/account/27487/appsumo/redeem', desc: 'POST appsumo/redeem' },
+    { method: 'DELETE', path: '/panel/api/account/27487', desc: 'DELETE account/27487' },
+    { method: 'POST', path: '/panel/api/account/27487/detach', desc: 'POST detach' },
+    { method: 'DELETE', path: '/panel/api/account/27487/detach', desc: 'DELETE detach' },
+    { method: 'PUT', path: '/panel/api/account/27487/detach', desc: 'PUT detach' },
+    { method: 'POST', path: '/panel/api/account/27487/delete', desc: 'POST account delete' },
+    { method: 'DELETE', path: '/panel/api/account/27487/delete', desc: 'DELETE account delete' },
+    { method: 'POST', path: '/panel/api/subscription/upgrade', desc: 'POST subscription upgrade' },
+    { method: 'POST', path: '/panel/api/subscription', desc: 'POST subscription' },
+    { method: 'DELETE', path: '/panel/api/subscription', desc: 'DELETE subscription' },
+    { method: 'POST', path: '/panel/api/account/27487/subscription', desc: 'POST account-nested subscription' },
+  ];
+
+  for (const item of blockedMutations) {
+    let fetchCount = 0;
+    const client = new TrustMateDirectClient({
+      baseUrl: 'https://api.example.com',
+      fetch: async () => { fetchCount++; return { ok: true, json: async () => ({}) }; }
+    });
+
+    await assert.rejects(
+      async () => await client.request(item.path, { method: item.method }),
+      (err) => {
+        assert.ok(err instanceof SecurityRouteDeniedError || err instanceof SecurityGateError, `Error for ${item.desc} must be SecurityRouteDeniedError`);
+        return true;
+      }
+    );
+    assert.equal(fetchCount, 0, `Fetch count must be 0 for ${item.desc}`);
+  }
+
+  // URL normalization check
+  assert.throws(
+    () => assertSafeRoute('POST', 'https://trustmate.io/panel/api/account/27487/appsumo/redeem?token=xyz'),
+    SecurityRouteDeniedError
+  );
+});
+
+test('TrustMateDirectClient - updateInvitationConfig dry-run executes zero PUT requests', async () => {
+  let putCount = 0;
+  const mockFetch = async (url, options = {}) => {
+    if (options.method === 'PUT') putCount++;
+    if (url.includes('/invitation_config')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({
+          items: [{ id: 66453, sendAfter: 4, remindAfter: 2 }]
+        })
+      };
+    }
+    throw new Error(`Unexpected url: ${url}`);
+  };
+
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: mockFetch
+  });
+
+  const plan = await client.updateInvitationConfig(27487, 66453, {
+    sendAfter: 5,
+    dryRun: true
+  });
+
+  assert.equal(putCount, 0, 'No HTTP PUT request should be sent in dry-run mode');
+  assert.equal(plan.mode, 'DRY_RUN');
+  assert.equal(plan.changes[0].currentValue, 4);
+  assert.equal(plan.changes[0].plannedValue, 5);
+  assert.match(plan.revertCommand, /--send-after 4/);
+});
+
+test('TrustMateDirectClient - updateInvitationConfig authoritative re-read verification', async () => {
+  let readCount = 0;
+  let putExecuted = false;
+
+  const mockFetch = async (url, options = {}) => {
+    if (options.method === 'PUT') {
+      putExecuted = true;
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ success: true })
+      };
+    }
+    // GET requests
+    readCount++;
+    const sendAfterValue = putExecuted ? 5 : 4;
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        items: [{ id: 66453, sendAfter: sendAfterValue }]
+      })
+    };
+  };
+
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: mockFetch
+  });
+
+  const res = await client.updateInvitationConfig(27487, 66453, {
+    sendAfter: 5,
+    dryRun: false
+  });
+
+  assert.equal(putExecuted, true);
+  assert.equal(readCount, 2, 'Authoritative re-read requires pre-read + post-read');
+  assert.equal(res.status, 'VERIFIED_SUCCESS');
+  assert.equal(res.changes[0].previousValue, 4);
+  assert.equal(res.changes[0].verifiedValue, 5);
+});
+
+test('TrustMateDirectClient - latent and expanded endpoints (profile, appsumo, mediations, invitations-log)', async () => {
+  const mockFetch = async (url) => {
+    if (url.includes('/panel/api/user/current')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ id: 42, email: 'operator@example.com', roles: ['ROLE_OPERATOR'], enabled: true })
+      };
+    }
+    if (url.includes('/appsumo/codes')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ([{ id: 1, code: 'APPSUMO-123' }])
+      };
+    }
+    if (url.includes('/appsumo/tier')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ id: 99, accountLimit: 3 })
+      };
+    }
+    if (url.includes('/mediation_stats')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ active: 0, resolved: 5 })
+      };
+    }
+    if (url.includes('/invitation/sending_stats')) {
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ items: [] })
+      };
+    }
+    throw new Error(`Unexpected url: ${url}`);
+  };
+
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: mockFetch
+  });
+
+  const user = await client.getCurrentUser();
+  assert.equal(user.email, 'operator@example.com');
+
+  const codes = await client.getAppSumoCodes(27487);
+  assert.equal(codes.length, 1);
+  assert.equal(codes[0].code, 'APPSUMO-123');
+
+  const tier = await client.getAppSumoTier(27487);
+  assert.equal(tier.accountLimit, 3);
+
+  const medStats = await client.getMediationStats(27487);
+  assert.equal(medStats.resolved, 5);
+
+  const invLog = await client.getInvitationsLog(27487);
+  assert.deepEqual(invLog, []);
+});
+
+test('TrustMateDirectClient - updateInvitationConfig preserves falsy sendAfter: 0', async () => {
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: async () => ({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ items: [{ id: 66453, sendAfter: 4, remindAfter: 7 }] })
+    })
+  });
+
+  const plan = await client.updateInvitationConfig(27487, 66453, {
+    sendAfter: 0,
+    dryRun: true
+  });
+
+  assert.equal(plan.changes[0].plannedValue, 0, 'plannedValue must be 0, not undefined');
+  assert.equal(plan.changes[0].currentValue, 4);
+});
+
+test('TrustMateDirectClient - updateInvitationConfig parses OpenCLI PascalCase shape', async () => {
+  const opencliFixture = [
+    {
+      ConfigId: 66453,
+      Name: 'Invitation to review account',
+      SendAfter: '4 days',
+      RemindAfter: '7 days',
+      Automatic: 'Yes'
+    }
+  ];
+
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: async () => ({
+      ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => opencliFixture
+    })
+  });
+
+  const plan = await client.updateInvitationConfig(27487, 66453, {
+    sendAfter: 5,
+    dryRun: true
+  });
+
+  assert.equal(plan.changes[0].currentValue, 4, 'OpenCLI SendAfter "4 days" must parse to number 4');
+  assert.equal(plan.changes[0].plannedValue, 5);
+  assert.equal(plan.revertCommand, 'trustmate config-set 27487 66453 --send-after 4');
+});
+
+test('TrustMateDirectClient - updateInvitationConfig detects state drift when server ignores update', async () => {
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: async (url, opts = {}) => {
+      const method = opts.method || 'GET';
+      if (method === 'PUT') {
+        return { ok: true, headers: new Headers({ 'content-type': 'application/json' }), json: async () => ({ success: true }) };
+      }
+      // Server always returns 4, ignoring update to 5
+      return {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({
+          items: [{ id: 66453, sendAfter: 4, remindAfter: 7, automatic: true }]
+        })
+      };
+    }
+  });
+
+  const result = await client.updateInvitationConfig(27487, 66453, {
+    sendAfter: 5,
+    dryRun: false
+  });
+
+  assert.equal(result.changes[0].verifiedValue, 4);
+  assert.equal(result.changes[0].match, false, 'match must be false when server state did not update');
+  assert.equal(result.status, 'STATE_DRIFT_DETECTED');
+});
+
+test('TrustMateDirectClient - updateInvitationConfig network failure on PUT prevents post-read', async () => {
+  let postReadAttempted = false;
+  let putAttempted = false;
+  const client = new TrustMateDirectClient({
+    baseUrl: 'https://api.example.com',
+    fetch: async (url, opts = {}) => {
+      const method = opts.method || 'GET';
+      if (method === 'PUT') {
+        putAttempted = true;
+        return { ok: false, status: 500, statusText: 'Internal Server Error', headers: new Headers(), text: async () => 'DB Error' };
+      }
+      if (putAttempted) {
+        postReadAttempted = true;
+      }
+      return {
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ items: [{ id: 66453, sendAfter: 4 }] })
+      };
+    }
+  });
+
+  await assert.rejects(
+    async () => await client.updateInvitationConfig(27487, 66453, { sendAfter: 5, dryRun: false }),
+    /TrustMate API error/
+  );
+  assert.equal(postReadAttempted, false, 'Post-read must not execute when PUT fails');
+});
+
+test('TrustMateClient - auto-mode session invariant throws when unauthenticated', async () => {
+  const originalCookie = process.env.TRUSTMATE_COOKIE;
+  delete process.env.TRUSTMATE_COOKIE;
+
+  try {
+    const client = new TrustMateClient({
+      opencliClient: {}
+    });
+
+    await assert.rejects(
+      async () => await client.getAccounts(),
+      /Authentication required: set TRUSTMATE_COOKIE or open trustmate.io in OpenCLI browser/
+    );
+  } finally {
+    if (originalCookie) process.env.TRUSTMATE_COOKIE = originalCookie;
+  }
+});
+
+test('TrustMateClient - auto-mode routes to OpenCLI client when cookie is absent', async () => {
+  const originalCookie = process.env.TRUSTMATE_COOKIE;
+  delete process.env.TRUSTMATE_COOKIE;
+
+  try {
+    let opencliCalled = false;
+    const mockOpenCli = {
+      getAccounts: async () => {
+        opencliCalled = true;
+        return [{ id: 27487, domain: 'store.example.com' }];
+      }
+    };
+
+    const client = new TrustMateClient({
+      opencliClient: mockOpenCli
+    });
+
+    const accounts = await client.getAccounts();
+    assert.equal(opencliCalled, true);
+    assert.equal(accounts[0].id, 27487);
+  } finally {
+    if (originalCookie) process.env.TRUSTMATE_COOKIE = originalCookie;
+  }
+});
+
+test('TrustMateOpenCliClient - dryRun on updateInvitationConfig and updateSettings', async () => {
+  const opencli = new TrustMateOpenCliClient({ sessionName: 'test-session' });
+  opencli.getInvitationConfigs = async () => [
+    { id: 66453, sendAfter: 4, remindAfter: 7, automatic: true }
+  ];
+  opencli.getSettings = async () => ({
+    instantReviews: false
+  });
+
+  const configPlan = await opencli.updateInvitationConfig(27487, 66453, {
+    sendAfter: 5,
+    dryRun: true
+  });
+  assert.equal(configPlan.mode, 'DRY_RUN');
+  assert.equal(configPlan.changes[0].currentValue, 4);
+  assert.equal(configPlan.changes[0].plannedValue, 5);
+  assert.equal(configPlan.revertCommand, 'trustmate config-set 27487 66453 --send-after 4');
+
+  const settingsPlan = await opencli.updateSettings(27487, {
+    instantReviews: true,
+    dryRun: true
+  });
+  assert.equal(settingsPlan.mode, 'DRY_RUN');
+  assert.equal(settingsPlan.changes[0].currentValue, false);
+  assert.equal(settingsPlan.changes[0].plannedValue, true);
+  assert.equal(settingsPlan.revertCommand, 'trustmate settings-set 27487 --instant-reviews false');
+});
+
 

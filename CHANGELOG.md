@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-10-04
+
+### Added
+- **Milestone M6 Panel Capability Map & Visual Probe**:
+  - Automated visual probe engine (`scripts/visual-probe.js`) mapping 23 panel endpoints with UI screenshots across Home, Invitations, Reviews, Mediations, Products, Statistics, Integrations, and Profile sections.
+  - Machine-readable capability registry `evidence/capability_map.json` documenting endpoint methods, paths, CLI coverage statuses, and response schemas.
+- **Milestone M7 Command Surface Parity & 20 OpenCLI Commands**:
+  - Expansion to 22 CLI commands and 20 OpenCLI registered adapter commands (`profile`, `appsumo`, `mediations`, `invitations-log`, `products-list`, `config-set`, `settings-set`, `reply-review`, etc.).
+  - Auto-Mode Session Invariant in `TrustMateClient`: Automatically routes requests to direct REST when cookies are present, or leverages authenticated Chrome browser sessions via OpenCLI when cookies are omitted.
+  - Security Guard Layer (`src/security-guard.js`) with denylist validation blocking unauthorized destructive actions (e.g. account deletion, plan alterations) with distinct exit codes (code 2 for security rejection).
+  - Smoke test verification runner (`scripts/smoke.js` / `npm run smoke -- 27487`) executing live read verification across all 17 read endpoints.
+- **Milestone M8 Reversible Write Lifecycle & Dry-Run Protocol**:
+  - Reversible mutation protocol with `--dry-run` simulation flag across `config-set`, `settings-set`, and `reply-review`.
+  - Authoritative re-read diff verification: automatically re-reads server state immediately after writes to confirm zero state drift before reporting success.
+  - Live execution and certified verification of W-1 Write Lifecycle on live Config 66453 (`4 days` -> `5 days` -> `4 days`), including strict customer-visible write boundaries.
+
+### Security
+- Session token and cookie redaction enforcement preventing plain-text credential leaks across all logs, transcripts, and repository files.
+- Customer-visible mutation isolation: `reply-review` strictly gated to dry-run preview to protect customer production touchpoints.
+
 ## [1.2.0] - 2026-10-04
 
 ### Added
