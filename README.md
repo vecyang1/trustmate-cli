@@ -65,13 +65,17 @@ TrustMate.io is a popular customer review and reputation management platform. Ho
 # 1. Clone repository
 git clone https://github.com/vecyang1/trustmate-cli.git && cd trustmate-cli
 
-# 2. Test installation & view help
-node bin/trustmate.js --help
+# 2. Global Installation (expose `trustmate` in terminal PATH)
+npm link
+# Or ensure ~/.local/bin fallback: ln -sf /opt/homebrew/bin/trustmate ~/.local/bin/trustmate
 
-# 3. Run automated unit tests (27/27 pass)
+# 3. Test installation & view help from any directory
+trustmate --help
+
+# 4. Run automated unit tests (27/27 pass)
 npm test
 
-# 4. Run live smoke test across all 17 read commands
+# 5. Run live smoke test across all 17 read commands on active store
 npm run smoke -- 27487
 ```
 

@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Authoritative re-read diff verification: automatically re-reads server state immediately after writes to confirm zero state drift before reporting success.
   - Live execution and certified verification of W-1 Write Lifecycle on live Config 66453 (`4 days` -> `5 days` -> `4 days`), including strict customer-visible write boundaries.
 
+### Fixed
+- **Global Executable Availability & PATH Linkage**: Linked `trustmate` executable globally via `npm link` (`/opt/homebrew/bin/trustmate`) and established fallback symlink at `~/.local/bin/trustmate`, resolving `command not found` when invoked from arbitrary shell directories. Verified with `trustmate stats 27487 --series` directly from `$HOME`.
+
 ### Security
 - Session token and cookie redaction enforcement preventing plain-text credential leaks across all logs, transcripts, and repository files.
 - Customer-visible mutation isolation: `reply-review` strictly gated to dry-run preview to protect customer production touchpoints.
