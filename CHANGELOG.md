@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-04
+
+### Added
+- **Diagnostic-First Reconciler (`diagnose`)**: Subcommand to reconcile TrustMate panel configuration against live storefront HTML (detects reachable status, loaded script tag, embedded widget tokens, and produces actionable verdicts).
+- **Deployment Code Architect (`deploy-guide`)**: Generates production-ready copy-paste code snippets for Google Tag Manager (with cart/checkout exclusion gates), WordPress MU-Plugin, and Product Detail Pages (PDP).
+- **Quiet Luxury Review Templates (`review-templates`)**: Built-in verified buyer review collection and 8 high-conversion image generation prompts for `image-gen-with-api`.
+- **Test Suite Expansion**: Added unit tests for diagnostic reconciliation, deploy guide snippets, and review templates (9/9 passing).
+
 ## [1.0.0] - 2026-10-04
 
 ### Added

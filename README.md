@@ -67,10 +67,13 @@ TrustMate.io is a popular customer review and reputation management platform. Ho
 │   └── trustmate.js          # Executable CLI binary
 ├── package.json              # Package manifest
 ├── src/
+│   ├── deploy-guide.js       # Deployment architect (GTM, WP, PDP with checkout exclusion gates)
+│   ├── diagnose.js           # Diagnostic-First reconciler (live storefront vs panel state)
 │   ├── direct-client.js      # Direct HTTP REST client for /panel/api/*
 │   ├── formatters.js         # Zero-dependency table/json/yaml/csv formatters
 │   ├── index.js              # Unified client export
-│   └── opencli-client.js     # OpenCLI browser-bridge client adapter
+│   ├── opencli-client.js     # OpenCLI browser-bridge client adapter
+│   └── review-templates.js   # Quiet luxury review personas & visual prompt templates
 └── tests/
     └── client.test.js        # Automated unit tests using node:test
 ```
@@ -139,6 +142,38 @@ node bin/trustmate.js invite <account-id> \
   --email customer@example.com \
   --name "Jane Doe" \
   --delay 3
+```
+
+### 7. Diagnostic-First Reconciler (`diagnose`)
+Verify and reconcile live storefront DOM status against TrustMate panel configuration ("凡称可配置，必须可检查；凡有业务规则，必须能找到对账依据"):
+```bash
+# Diagnose live site vs panel configuration
+node bin/trustmate.js diagnose <account-id> --site https://store.example.com
+
+# Structured JSON for monitoring & agent pipelines
+node bin/trustmate.js diagnose <account-id> --site https://store.example.com -f json
+```
+
+### 8. Deployment Architect (`deploy-guide`)
+Generate copy-paste deployment code with automatic checkout/cart exclusion gates:
+```bash
+# Full deployment architecture & guide
+node bin/trustmate.js deploy-guide <account-id> --site https://store.example.com
+
+# Target-specific snippets
+node bin/trustmate.js deploy-guide <account-id> --site https://store.example.com --target gtm
+node bin/trustmate.js deploy-guide <account-id> --site https://store.example.com --target wordpress
+node bin/trustmate.js deploy-guide <account-id> --site https://store.example.com --target pdp
+```
+
+### 9. Review Templates & Visual Prompts (`review-templates`)
+Access verified quiet luxury customer review templates and photography prompts for authentic social proof:
+```bash
+# List all buyer personas
+node bin/trustmate.js review-templates
+
+# Get prompt and review for specific persona
+node bin/trustmate.js review-templates elena-rostova -f json
 ```
 
 ---

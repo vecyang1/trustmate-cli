@@ -1,5 +1,8 @@
 import { TrustMateDirectClient } from './direct-client.js';
 import { TrustMateOpenCLIClient } from './opencli-client.js';
+import { diagnoseSite } from './diagnose.js';
+import { generateDeployGuide } from './deploy-guide.js';
+import { getReviewTemplates } from './review-templates.js';
 
 /**
  * Unified TrustMate Client
@@ -57,7 +60,20 @@ export class TrustMateClient {
     }
     return await this.opencliClient.queueInvitation(params);
   }
+
+  async diagnose(options = {}) {
+    return await diagnoseSite(this.activeClient, options);
+  }
+
+  async getDeployGuide(accountId) {
+    return await generateDeployGuide(this.activeClient, accountId);
+  }
+
+  getReviewTemplates() {
+    return getReviewTemplates();
+  }
 }
 
 export { TrustMateDirectClient, TrustMateOpenCLIClient };
+export { diagnoseSite, generateDeployGuide, getReviewTemplates };
 export { formatOutput } from './formatters.js';

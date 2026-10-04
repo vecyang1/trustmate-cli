@@ -3,50 +3,48 @@
 import { TrustMateClient } from '../src/index.js';
 import { formatOutput } from '../src/formatters.js';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 function printHelp() {
   console.log(`
 TrustMate CLI - v${VERSION}
-Programmatic and agentic client for TrustMate.io reviews, widgets, quotas & automation.
+Programmatic & agentic client for TrustMate.io reviews, widgets, quotas & automation.
 
 USAGE:
   trustmate <command> [options]
 
 COMMANDS:
-  accounts             List all connected store accounts and AppSumo allocations
-  quota [account-id]   View monthly invitation quota and usage
-  widgets [account-id] List all review widgets and HTML embed code snippets
-  keys [account-id]    Get WooCommerce / Shopify installation UUID and Secret key
-  reviews [account-id] Fetch customer reviews (--type company|product)
-  invite [account-id]  Queue an automated review invite email (--email, --name)
+  accounts                 List all connected store accounts and AppSumo allocations
+  quota [account-id]       View monthly invitation quota and usage
+  widgets [account-id]     List all review widgets and HTML embed code snippets
+  keys [account-id]        Get WooCommerce / Shopify installation UUID and Secret key
+  reviews [account-id]     Fetch customer reviews (--type company|product)
+  invite [account-id]      Queue an automated review invite email (--email, --name)
+  diagnose [account-id]    Reconcile live storefront HTML with TrustMate panel config (--site <url>)
+  deploy-guide [acct-id]   Generate copy-paste deployment snippets for GTM, WordPress, and PDP
+  review-templates         Get high-converting verified buyer review templates & image prompts
 
 GLOBAL OPTIONS:
-  -a, --account <id>   Target store account ID
-  -f, --format <fmt>   Output format: table (default), json, yaml, csv
-  -c, --cookie <str>   Session cookie for direct REST mode (or env TRUSTMATE_COOKIE)
-  -m, --mode <mode>    Client mode: auto (default), direct, opencli
-  -h, --help           Show this help message
-  -v, --version        Show version
+  -a, --account <id>       Target store account ID
+  -s, --site <url>         Live store URL to diagnose/audit
+  -f, --format <fmt>       Output format: table (default), json, yaml, csv
+  -c, --cookie <str>       Session cookie for direct REST mode (or env TRUSTMATE_COOKIE)
+  -m, --mode <mode>        Client mode: auto (default), direct, opencli
+  -h, --help               Show this help message
+  -v, --version            Show version
 
 EXAMPLES:
-  # List accounts using active Chrome session via OpenCLI
-  trustmate accounts
+  # 1. Run live storefront diagnostic reconciliation
+  trustmate diagnose 12345 --site https://store.example.com
 
-  # Output in JSON format
-  trustmate accounts -f json
+  # 2. Output diagnostic in JSON format
+  trustmate diagnose 12345 --site https://store.example.com -f json
 
-  # Check quota using direct REST cookie
-  TRUSTMATE_COOKIE="user_session=..." trustmate quota 12345
+  # 3. Generate copy-paste deployment snippets for GTM and WordPress
+  trustmate deploy-guide 12345
 
-  # List embed widgets for account
-  trustmate widgets 12345
-
-  # Retrieve WooCommerce platform keys
-  trustmate keys 12345
-
-  # Queue customer review invitation
-  trustmate invite 12345 --email user@example.com --name "John Doe" --delay 3
+  # 4. Get luxury jewelry review templates and photo prompts
+  trustmate review-templates -f json
 `);
 }
 
@@ -74,6 +72,8 @@ function parseCliArgs(args) {
       result.flags.cookie = args[++i] || '';
     } else if (arg === '-a' || arg === '--account') {
       result.flags.account = args[++i] || '';
+    } else if (arg === '-s' || arg === '--site') {
+      result.flags.site = args[++i] || '';
     } else if (arg === '-m' || arg === '--mode') {
       result.flags.mode = args[++i] || 'auto';
     } else if (arg === '--email') {
@@ -158,6 +158,21 @@ async function main() {
           name: flags.name,
           delay: flags.delay ? Number(flags.delay) : 0
         });
+        break;
+      }
+      case 'diagnose': {
+        result = await client.diagnose({
+          accountId: targetAccount,
+          siteUrl: flags.site
+        });
+        break;
+      }
+      case 'deploy-guide': {
+        result = await client.getDeployGuide(targetAccount);
+        break;
+      }
+      case 'review-templates': {
+        result = client.getReviewTemplates();
         break;
       }
       default: {

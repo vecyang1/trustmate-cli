@@ -1,6 +1,6 @@
 {
   "name": "trustmate-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Agentic CLI and programmatic client for TrustMate.io reviews, widgets, quotas, and automation",
   "type": "module",
   "main": "src/index.js",
