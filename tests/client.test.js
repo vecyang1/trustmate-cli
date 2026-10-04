@@ -262,4 +262,17 @@ test('getReviewTemplates - returns authentic quiet luxury reviews with image pro
     // Ensure calm tone: no exclamation hype
     assert.ok(!item.headline.includes('!'), `Headline contains '!': ${item.headline}`);
   }
+
+  // Test pet memorial review templates
+  const petTemplates = getReviewTemplates('pets');
+  assert.ok(petTemplates.length >= 4);
+  for (const item of petTemplates) {
+    assert.ok(item.author);
+    assert.equal(item.rating, 5);
+    assert.ok(item.headline);
+    assert.ok(item.body);
+    assert.ok(item.product);
+    assert.ok(item.imagePrompt);
+    assert.ok(!item.headline.includes('!'), `Headline contains '!': ${item.headline}`);
+  }
 });

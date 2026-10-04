@@ -69,8 +69,8 @@ export class TrustMateClient {
     return await generateDeployGuide(this.activeClient, accountId);
   }
 
-  getReviewTemplates() {
-    return getReviewTemplates();
+  getReviewTemplates(category) {
+    return getReviewTemplates(category);
   }
 }
 

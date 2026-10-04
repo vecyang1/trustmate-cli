@@ -95,6 +95,59 @@ export const LUXURY_JEWELRY_REVIEWS = [
   }
 ];
 
-export function getReviewTemplates() {
+export const PET_MEMORIAL_REVIEWS = [
+  {
+    id: 'pet-001',
+    author: 'Rachel Adams',
+    location: 'Portland, OR',
+    verified: true,
+    rating: 5,
+    product: 'Handcrafted Ceramic Memorial Pawprint Stone',
+    headline: 'A tender physical presence in the garden where Buster loved to rest',
+    body: 'Losing our golden retriever of fourteen years left an unbearable stillness in the house. Placing this sculpted clay memorial stone beneath his favorite birch tree brought our family unexpected peace. The impression depth feels permanent and weather-resistant through heavy autumn rains.',
+    imagePrompt: 'Close-up editorial photo of a weather-resistant carved natural river stone with an embossed dog pawprint, nestled in moist green moss and fallen golden autumn leaves, gentle morning mist lighting, peaceful contemplative mood.'
+  },
+  {
+    id: 'pet-002',
+    author: 'Thomas Wright',
+    location: 'Seattle, WA',
+    verified: true,
+    rating: 5,
+    product: 'Sterling Silver Cremation Urn Pendant with Paw Silhouette',
+    headline: 'Brought quiet comfort on the mountain trails we used to hike together',
+    body: 'The screw-top seal with the silicone gasket gives absolute confidence that a small pinch of ashes remains completely protected. The brushed sterling silver finish has a comforting weight against the chest without feeling conspicuous.',
+    imagePrompt: 'Macro product photograph of a brushed 925 sterling silver cylindrical cremation keepsake pendant with an engraved tiny paw print, resting on dark weathered cedar wood beside a green hiking fleece, soft northern daylight.'
+  },
+  {
+    id: 'pet-003',
+    author: 'Hannah Lindqvist',
+    location: 'Stockholm, Sweden',
+    verified: true,
+    rating: 5,
+    product: 'Custom Engraved Wooden Memory Keepsake Box',
+    headline: 'The gentle grain and delicate brass latch honor Luna with dignified grace',
+    body: 'Holding her collar and favorite wool toy inside this walnut box felt like tucking her in for the last time. The wood joint craftsmanship is seamless and the velvet interior lining is exceptionally soft.',
+    imagePrompt: 'Still life photo of an open handcrafted dark walnut memory box lined with cream velvet, containing a woven pet collar and brass bell, resting on an oak shelf beside a framed vintage pet portrait, warm domestic ambient light.'
+  },
+  {
+    id: 'pet-004',
+    author: 'Dr. Evelyn Vance',
+    location: 'Boston, MA',
+    verified: true,
+    rating: 5,
+    product: 'Ceramic Fur & Whisker Keepsake Vessel',
+    headline: 'Meticulously packaged with quiet reverence',
+    body: 'As a veterinary surgeon, I counsel families through bereavement every week, yet grieving my own Siamese cat proved disorienting. Opening this ceramic vessel with its tight cork stopper felt restorative. It sits on my desk as a quiet reminder of fifteen years of companionship.',
+    imagePrompt: 'Minimalist product photo of a small matte white ceramic keepsake jar with a natural cork stopper, tied with raw twine and a miniature brass tag, resting on a clean marble desk beside an open book, soft diffuse daylight.'
+  }
+];
+
+export function getReviewTemplates(category = 'jewelry') {
+  if (category === 'pets' || category === 'pet') {
+    return PET_MEMORIAL_REVIEWS;
+  }
+  if (category === 'all') {
+    return [...LUXURY_JEWELRY_REVIEWS, ...PET_MEMORIAL_REVIEWS];
+  }
   return LUXURY_JEWELRY_REVIEWS;
 }

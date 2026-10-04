@@ -29,6 +29,7 @@ vault/
 resources/
 canvases/
 docs/
+.agents/
 
 # OS Clutter
 .DS_Store

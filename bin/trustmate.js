@@ -172,7 +172,7 @@ async function main() {
         break;
       }
       case 'review-templates': {
-        result = client.getReviewTemplates();
+        result = client.getReviewTemplates(targetAccount || flags.category);
         break;
       }
       default: {
