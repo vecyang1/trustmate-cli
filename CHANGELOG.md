@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-04
+
+### Added
+- `stats` (aggregate grade, positive/negative, grade distribution; `--series` daily trend; `--start/--end`), `products`, `configs`, `settings`, `subscription` commands in CLI, SDK (direct + OpenCLI) and OpenCLI adapter.
+- `review-templates [jewelry|pets|all]` category selection.
+
+### Fixed
+- `review_stats` / `stats` endpoints return HTTP 422 without a date range; both clients now default to the last 30 days.
+- Diagnose verdict normalized to `ACTIVE_DEPLOYED | PANEL_READY_NOT_DEPLOYED | OFFLINE`; uppercase OpenCLI `Domain` fallback; case-insensitive `productFerret2` token lookup.
+
 ## [1.1.0] - 2026-10-04
 
 ### Added

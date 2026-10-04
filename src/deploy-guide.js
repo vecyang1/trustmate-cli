@@ -24,7 +24,10 @@ export async function generateDeployGuide(client, accountId) {
 
   const widgetMap = {};
   for (const w of widgets) {
-    widgetMap[w.type] = w;
+    if (w.type) {
+      widgetMap[w.type.toLowerCase()] = w;
+      widgetMap[w.type] = w;
+    }
   }
 
   // Find key widgets
@@ -33,19 +36,38 @@ export async function generateDeployGuide(client, accountId) {
   const bee = widgetMap['bee'] || widgets[2];
   const ferret = widgetMap['ferret2'] || widgetMap['ferret'] || widgets[3];
   const badger = widgetMap['badger2'] || widgetMap['badger'] || widgets[4];
-  const productFerret = widgetMap['productFerret2'] || widgetMap['productFerret'] || widgets[5];
+  const productFerret = widgetMap['productferret2'] || widgetMap['productferret'] || widgetMap['productFerret2'] || widgets[5];
   const jellyfish = widgetMap['jellyfish'] || widgets[6];
 
-  const domain = account.sanitizedUrl || account.domain || 'yourstore.com';
+  const domain = account.sanitizedUrl || account.domain || account.Domain || 'yourstore.com';
 
   const gtmSnippet = `<!-- TrustMate GTM Custom HTML Tag for ${domain} -->
 <!-- Trigger: All Pages (with Exclusion Rule: Page URL does NOT contain /checkout/ or /cart/) -->
 <script>
 (function() {
-  // Conversion Protection Gate: Never display floating popups or distractions on checkout/cart
+  // Conversion Protection Gate: Strictly exclude checkout, cart, order confirmation, and payment gateways
   var path = window.location.pathname.toLowerCase();
-  if (path.indexOf('/checkout') !== -1 || path.indexOf('/cart') !== -1 || path.indexOf('/receipt') !== -1) {
-    return;
+  var search = window.location.search.toLowerCase();
+  var fullUrl = path + search;
+
+  var excludedPatterns = [
+    '/checkout',
+    '/cart',
+    '/order-received',
+    '/order-pay',
+    '/thank-you',
+    '/receipt',
+    'surecart_checkout',
+    'wcf-checkout',
+    'cartflows_step',
+    'wc-ajax',
+    'wc-api'
+  ];
+
+  for (var i = 0; i < excludedPatterns.length; i++) {
+    if (fullUrl.indexOf(excludedPatterns[i]) !== -1) {
+      return;
+    }
   }
 
   // 1. Inject Floating Edge Trust Badge (${muskrat.type})
@@ -72,23 +94,58 @@ export async function generateDeployGuide(client, accountId) {
 
   const muPluginPhp = `<?php
 /**
- * Plugin Name: GlintMuse TrustMate Reviews & Widgets Integration
- * Description: Production integration for TrustMate.io review badges and social proof widgets.
+ * Plugin Name: TrustMate Reviews & Conversion Protection Integration (${domain})
+ * Description: Production integration for TrustMate.io review badges and social proof widgets with strict checkout exclusion gates.
  * Version: 1.0.0
  * Author: World Inspire Lab
  */
 
 if (!defined('ABSPATH')) exit;
 
+if (!function_exists('is_trustmate_excluded_page')) {
+    function is_trustmate_excluded_page() {
+        if (is_admin()) return true;
+
+        // WooCommerce checkout and cart conditionals
+        if (function_exists('is_checkout') && is_checkout()) return true;
+        if (function_exists('is_cart') && is_cart()) return true;
+        if (function_exists('is_order_received_page') && is_order_received_page()) return true;
+
+        // CartFlows / Funnel checkout steps
+        if (function_exists('wcf_is_checkout_step') && wcf_is_checkout_step()) return true;
+
+        // URI patterns for WooCommerce, SureCart, and payment gateways
+        $uri = isset($_SERVER['REQUEST_URI']) ? strtolower((string)$_SERVER['REQUEST_URI']) : '';
+        $excluded_patterns = [
+            '/checkout',
+            '/cart',
+            '/order-received',
+            '/order-pay',
+            '/thank-you',
+            '/receipt',
+            'surecart_checkout',
+            'wcf-checkout',
+            'cartflows_step',
+            'wc-api',
+            'wc-ajax',
+        ];
+
+        foreach ($excluded_patterns as $pattern) {
+            if (strpos($uri, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 add_action('wp_footer', function() {
-    // Conversion Protection: Exclude on cart, checkout, and thank-you endpoints
-    if (function_exists('is_checkout') && is_checkout()) return;
-    if (function_exists('is_cart') && is_cart()) return;
-    $uri = $_SERVER['REQUEST_URI'] ?? '';
-    if (strpos($uri, 'checkout') !== false || strpos($uri, 'cart') !== false) return;
+    // Conversion Protection Gate: Never render floating badges on checkout/cart/order steps
+    if (is_trustmate_excluded_page()) return;
 
     ?>
-    <!-- TrustMate Floating Badge & Social Proof -->
+    <!-- TrustMate Floating Badge & Social Proof (${domain}) -->
     <div id="${muskrat.token}"></div>
     <script defer src="https://trustmate.io/widget/api/${muskrat.token}/script"></script>
 
@@ -120,7 +177,7 @@ add_action('wp_footer', function() {
 <script defer src="https://trustmate.io/widget/api/${ferret.token}/script"></script>`;
 
   return {
-    accountId: account.id,
+    accountId: account.id || account.Id || account.ID,
     domain,
     placementPlan: [
       { location: 'Global Floating Badge', widget: muskrat.name, type: muskrat.type, token: muskrat.token },

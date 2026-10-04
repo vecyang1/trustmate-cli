@@ -38,3 +38,6 @@ Thumbs.db
 # Test & Coverage
 coverage/
 .nyc_output/
+
+# Graphify Output
+graphify-out/

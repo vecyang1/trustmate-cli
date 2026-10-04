@@ -170,4 +170,82 @@ export class TrustMateDirectClient {
       body: JSON.stringify(payload)
     });
   }
+
+  /**
+   * List store products tracked in TrustMate
+   * @param {number|string} accountId
+   */
+  async getProducts(accountId) {
+    if (!accountId) throw new Error('accountId is required to get products');
+    const data = await this.request(`/panel/api/account/${accountId}/product`);
+    return Array.isArray(data) ? data : ((data && data.items) || []);
+  }
+
+  /**
+   * Get store account configuration and alert recipients
+   * @param {number|string} accountId
+   */
+  async getSettings(accountId) {
+    if (!accountId) throw new Error('accountId is required to get settings');
+    return await this.request(`/panel/api/account/${accountId}/settings`);
+  }
+
+  /**
+   * Get store subscription status and expiration
+   * @param {number|string} accountId
+   */
+  async getSubscription(accountId) {
+    if (!accountId) throw new Error('accountId is required to get subscription');
+    const data = await this.request(`/panel/api/account/${accountId}/subscription`);
+    return (data && Array.isArray(data.items) && data.items[0]) || data || {};
+  }
+
+  /**
+   * Get aggregate review stats (average grade, positive/negative, distribution)
+   * @param {number|string} accountId
+   * @param {Object} [options]
+   * @param {string} [options.startDate] - YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+   * @param {string} [options.endDate] - YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+   */
+  async getReviewStats(accountId, options = {}) {
+    if (!accountId) throw new Error('accountId is required to get review stats');
+    const now = new Date();
+    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const start = options.startDate || past.toISOString().split('T')[0];
+    const end = options.endDate || now.toISOString().split('T')[0];
+
+    const cleanStart = String(start).includes(' ') ? start : `${start} 00:00:00`;
+    const cleanEnd = String(end).includes(' ') ? end : `${end} 23:59:59`;
+
+    const params = new URLSearchParams({
+      startDate: cleanStart,
+      endDate: cleanEnd
+    });
+    return await this.request(`/panel/api/account/${accountId}/review_stats?${params.toString()}`);
+  }
+
+  /**
+   * Get daily time-series stats (trend over time, NPS)
+   * @param {number|string} accountId
+   * @param {Object} [options]
+   * @param {string} [options.startDate] - YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+   * @param {string} [options.endDate] - YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+   */
+  async getTimeSeriesStats(accountId, options = {}) {
+    if (!accountId) throw new Error('accountId is required to get time-series stats');
+    const now = new Date();
+    const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const start = options.startDate || past.toISOString().split('T')[0];
+    const end = options.endDate || now.toISOString().split('T')[0];
+
+    const cleanStart = String(start).includes(' ') ? start : `${start} 00:00:00`;
+    const cleanEnd = String(end).includes(' ') ? end : `${end} 23:59:59`;
+
+    const params = new URLSearchParams({
+      start_date: cleanStart,
+      end_date: cleanEnd
+    });
+    return await this.request(`/panel/api/account/${accountId}/stats?${params.toString()}`);
+  }
 }
+

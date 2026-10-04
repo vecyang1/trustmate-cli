@@ -70,4 +70,40 @@ export class TrustMateOpenCLIClient {
     if (delay !== undefined && delay !== null) args.push('--delay', String(delay));
     return await this.runCommand('invite', args);
   }
+
+  async getInvitationConfigs(accountId) {
+    const args = accountId ? ['--account', String(accountId)] : [];
+    return await this.runCommand('configs', args);
+  }
+
+  async getProducts(accountId) {
+    const args = accountId ? ['--account', String(accountId)] : [];
+    return await this.runCommand('products', args);
+  }
+
+  async getSettings(accountId) {
+    const args = accountId ? ['--account', String(accountId)] : [];
+    return await this.runCommand('settings', args);
+  }
+
+  async getSubscription(accountId) {
+    const args = accountId ? ['--account', String(accountId)] : [];
+    return await this.runCommand('subscription', args);
+  }
+
+  async getReviewStats(accountId, options = {}) {
+    const args = [];
+    if (accountId) args.push('--account', String(accountId));
+    if (options.startDate) args.push('--start', options.startDate);
+    if (options.endDate) args.push('--end', options.endDate);
+    return await this.runCommand('stats', args);
+  }
+
+  async getTimeSeriesStats(accountId, options = {}) {
+    const args = ['--series'];
+    if (accountId) args.push('--account', String(accountId));
+    if (options.startDate) args.push('--start', options.startDate);
+    if (options.endDate) args.push('--end', options.endDate);
+    return await this.runCommand('stats', args);
+  }
 }

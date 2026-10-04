@@ -61,6 +61,30 @@ export class TrustMateClient {
     return await this.opencliClient.queueInvitation(params);
   }
 
+  async getProducts(accountId) {
+    return await this.activeClient.getProducts(accountId);
+  }
+
+  async getSettings(accountId) {
+    return await this.activeClient.getSettings(accountId);
+  }
+
+  async getSubscription(accountId) {
+    return await this.activeClient.getSubscription(accountId);
+  }
+
+  async getReviewStats(accountId, options) {
+    return await this.activeClient.getReviewStats(accountId, options);
+  }
+
+  async getTimeSeriesStats(accountId, options) {
+    return await this.activeClient.getTimeSeriesStats(accountId, options);
+  }
+
+  async getInvitationConfigs(accountId) {
+    return await this.activeClient.getInvitationConfigs(accountId);
+  }
+
   async diagnose(options = {}) {
     return await diagnoseSite(this.activeClient, options);
   }

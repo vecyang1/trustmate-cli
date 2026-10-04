@@ -3,7 +3,7 @@
 import { TrustMateClient } from '../src/index.js';
 import { formatOutput } from '../src/formatters.js';
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 
 function printHelp() {
   console.log(`
@@ -19,10 +19,15 @@ COMMANDS:
   widgets [account-id]     List all review widgets and HTML embed code snippets
   keys [account-id]        Get WooCommerce / Shopify installation UUID and Secret key
   reviews [account-id]     Fetch customer reviews (--type company|product)
+  stats [account-id]       View review metrics, ratings distribution, and NPS (--series for trend)
+  products [account-id]    List store products tracked in TrustMate
+  configs [account-id]     List invitation configurations (email & instant)
+  settings [account-id]    View store configuration and alert recipients
+  subscription [acct-id]   View subscription plan, status, and expiration
   invite [account-id]      Queue an automated review invite email (--email, --name)
   diagnose [account-id]    Reconcile live storefront HTML with TrustMate panel config (--site <url>)
   deploy-guide [acct-id]   Generate copy-paste deployment snippets for GTM, WordPress, and PDP
-  review-templates         Get high-converting verified buyer review templates & image prompts
+  review-templates [cat]   Get verified review templates & photo prompts (jewelry|pets)
 
 GLOBAL OPTIONS:
   -a, --account <id>       Target store account ID
@@ -86,6 +91,14 @@ function parseCliArgs(args) {
       result.flags.config = args[++i] || '';
     } else if (arg === '--type') {
       result.flags.type = args[++i] || 'company';
+    } else if (arg === '--start') {
+      result.flags.start = args[++i] || '';
+    } else if (arg === '--end') {
+      result.flags.end = args[++i] || '';
+    } else if (arg === '--series') {
+      result.flags.series = true;
+    } else if (arg === '--category') {
+      result.flags.category = args[++i] || '';
     } else if (arg.startsWith('--')) {
       // Ignore unknown option
     } else if (!result.command) {
@@ -140,6 +153,36 @@ async function main() {
       }
       case 'reviews': {
         result = await client.getReviews(targetAccount, { type: flags.type });
+        break;
+      }
+      case 'stats': {
+        if (flags.series) {
+          result = await client.getTimeSeriesStats(targetAccount, {
+            startDate: flags.start,
+            endDate: flags.end
+          });
+        } else {
+          result = await client.getReviewStats(targetAccount, {
+            startDate: flags.start,
+            endDate: flags.end
+          });
+        }
+        break;
+      }
+      case 'products': {
+        result = await client.getProducts(targetAccount);
+        break;
+      }
+      case 'configs': {
+        result = await client.getInvitationConfigs(targetAccount);
+        break;
+      }
+      case 'settings': {
+        result = await client.getSettings(targetAccount);
+        break;
+      }
+      case 'subscription': {
+        result = await client.getSubscription(targetAccount);
         break;
       }
       case 'invite': {
