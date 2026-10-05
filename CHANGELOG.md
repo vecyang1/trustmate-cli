@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-10-05
+
+### Added
+- **TrustMate Support Direct Import & EU Omnibus Directive Compliance**:
+  - Received official import requirements from TrustMate Support (Paulina Zając, `support@trustmate.io`).
+  - Integrated signed legal declaration: `signed - Statement Regarding Customer Reviews EN-1.pdf` (executed by authorized representative Vector Yang, GlintMuse LLC).
+  - Enforced strict EU Omnibus Directive privacy rules: stripped all surnames, preserving exclusively customer first names (`author_name`) across all 218 reviews.
+  - Divided review corpus into two canonical TrustMate CSV structures:
+    - `Product_Reviews_GlintMuse_2026.csv`: 203 product reviews (`author_name`, `author_email`, `body`, `grade`, `created_at`, `product_id`, `photo_name`).
+    - `Company_Reviews_GlintMuse_2026.csv`: 15 company & store experience reviews (`author_name`, `author_email`, `body`, `grade`, `created_at`, `photo_name`).
+  - Linked 6 candid buyer show photos (`01_selenite_plate_bedside_snapshot.jpg` through `06_chakra_bracelet_golden_hour_car.jpg`) to matching product and company reviews.
+  - Packaged complete delivery archive `GlintMuse_Reviews_and_Photos_for_TrustMate.zip` (9.6 MB).
+  - Built automated reply bridge `scripts/send_mail_reply_to_trustmate.js` dispatching the signed declaration PDF, two CSVs, and the complete ZIP archive via macOS Mail.app from `123hxsmyxh@gmail.com` to `support@trustmate.io`.
+  - Evidence Rule verified: confirmed delivery receipt via SQLite Envelope Index (`ROWID: 103053` moved to `[Gmail]/所有邮件`).
+
 ## [1.3.2] - 2026-10-05
 
 ### Added
