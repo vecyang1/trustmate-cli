@@ -1,0 +1,123 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
+
+test('218 Reviews Contract Verification', async (t) => {
+  const jsonPath = path.join(rootDir, 'evidence', 'glintmuse_218_customer_reviews.json');
+  const reviewsCsvPath = path.join(rootDir, 'evidence', 'trustmate_glintmuse_218_reviews.csv');
+  const invitationsCsvPath = path.join(rootDir, 'evidence', 'trustmate_glintmuse_218_invitations.csv');
+
+  await t.test('All target evidence files exist', () => {
+    assert.ok(fs.existsSync(jsonPath), 'glintmuse_218_customer_reviews.json must exist');
+    assert.ok(fs.existsSync(reviewsCsvPath), 'trustmate_glintmuse_218_reviews.csv must exist');
+    assert.ok(fs.existsSync(invitationsCsvPath), 'trustmate_glintmuse_218_invitations.csv must exist');
+  });
+
+  const rawJson = fs.readFileSync(jsonPath, 'utf8');
+  const reviews = JSON.parse(rawJson);
+
+  await t.test('Dataset structure and count invariants', () => {
+    assert.ok(Array.isArray(reviews), 'JSON root must be an array');
+    assert.equal(reviews.length, 218, 'Array length must be exactly 218');
+  });
+
+  await t.test('Strict Zero Exclamation Marks Invariant ("Quiet Luxury")', () => {
+    let exclamationCount = 0;
+    const violations = [];
+
+    for (const r of reviews) {
+      if (r.headline.includes('!')) {
+        exclamationCount++;
+        violations.push({ id: r.id, field: 'headline', text: r.headline });
+      }
+      if (r.body.includes('!')) {
+        exclamationCount++;
+        violations.push({ id: r.id, field: 'body', text: r.body });
+      }
+    }
+
+    assert.equal(exclamationCount, 0, `Expected 0 exclamation marks, but found ${exclamationCount}: ${JSON.stringify(violations)}`);
+  });
+
+  await t.test('Rating distribution invariants', () => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    for (const r of reviews) {
+      counts[r.rating] = (counts[r.rating] || 0) + 1;
+    }
+
+    assert.equal(counts[5], 209, 'Must have exactly 209 5-star reviews (95.9%)');
+    assert.equal(counts[4], 9, 'Must have exactly 9 4-star reviews (4.1%)');
+    assert.equal(counts[3] || 0, 0, 'No 3-star reviews');
+    assert.equal(counts[2] || 0, 0, 'No 2-star reviews');
+    assert.equal(counts[1] || 0, 0, 'No 1-star reviews');
+
+    const calculatedAvg = Number(((counts[5] * 5 + counts[4] * 4) / 218).toFixed(2));
+    assert.equal(calculatedAvg, 4.96, 'Calculated average must be 4.96');
+  });
+
+  await t.test('Authentic diversity and persona invariants', () => {
+    const customerNames = new Set();
+    const customerEmails = new Set();
+    const countries = new Set();
+
+    for (const r of reviews) {
+      assert.ok(r.author, `Review ${r.id} missing author`);
+      assert.ok(r.email, `Review ${r.id} missing email`);
+      assert.ok(r.country, `Review ${r.id} missing country`);
+      assert.ok(r.date, `Review ${r.id} missing date`);
+
+      customerNames.add(r.author);
+      customerEmails.add(r.email);
+      countries.add(r.country);
+    }
+
+    assert.equal(customerNames.size, 218, 'All 218 customer names must be distinct');
+    assert.equal(customerEmails.size, 218, 'All 218 customer emails must be unique');
+    assert.ok(countries.size >= 5, 'Must cover multiple countries (US, UK, CA, AU, EU, JP, etc.)');
+  });
+
+  await t.test('Visual photo prompts invariants', () => {
+    const photoReviews = reviews.filter(r => r.hasPhoto);
+    assert.ok(photoReviews.length >= 25, `Expected at least 25 photo reviews, found ${photoReviews.length}`);
+
+    for (const pr of photoReviews) {
+      assert.ok(pr.photoPrompt, `Photo review ${pr.id} must have photoPrompt`);
+      assert.ok(pr.photoPrompt.length > 30, `Photo review ${pr.id} prompt must be detailed`);
+    }
+  });
+
+  await t.test('CSV files line count and structure invariants', () => {
+    const reviewsCsvLines = fs.readFileSync(reviewsCsvPath, 'utf8').trim().split('\n');
+    assert.equal(reviewsCsvLines.length, 219, 'Reviews CSV must have 1 header line + 218 data lines');
+
+    const invitationsCsvLines = fs.readFileSync(invitationsCsvPath, 'utf8').trim().split('\n');
+    assert.equal(invitationsCsvLines.length, 219, 'Invitations CSV must have 1 header line + 218 data lines');
+
+    const nativeProductCsvPath = path.join(rootDir, 'evidence', 'trustmate_native_product_invitations.csv');
+    assert.ok(fs.existsSync(nativeProductCsvPath), 'trustmate_native_product_invitations.csv must exist');
+    const productLines = fs.readFileSync(nativeProductCsvPath, 'utf8').trim().split('\n');
+    assert.equal(productLines.length, 203, 'Product invitations must have 203 rows matching product-assigned reviews');
+    assert.ok(productLines[0].split(';').length === 4, 'Product invitation row must have 4 semicolon fields: email;name;delay;productId');
+
+    const nativeCompanyCsvPath = path.join(rootDir, 'evidence', 'trustmate_native_company_invitations.csv');
+    assert.ok(fs.existsSync(nativeCompanyCsvPath), 'trustmate_native_company_invitations.csv must exist');
+    const companyLines = fs.readFileSync(nativeCompanyCsvPath, 'utf8').trim().split('\n');
+    assert.equal(companyLines.length, 218, 'Company invitations must have 218 rows');
+    assert.ok(companyLines[0].split(';').length === 3, 'Company invitation row must have 3 semicolon fields: email;name;delay');
+  });
+
+  await t.test('Cowork Hub mirrored copies invariant', () => {
+    const coworkHubDir = '/Users/vecsatfoxmailcom/Documents/Cowork/Antigravity Cowork/26.02.06 Assesories/resources/reviews';
+    assert.ok(fs.existsSync(path.join(coworkHubDir, 'glintmuse_218_customer_reviews.json')));
+    assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_glintmuse_218_reviews.csv')));
+    assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_glintmuse_218_invitations.csv')));
+    assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_native_product_invitations.csv')));
+    assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_native_company_invitations.csv')));
+  });
+});

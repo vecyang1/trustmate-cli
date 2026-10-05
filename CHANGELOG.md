@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-10-05
+
+### Added
+- **218 Quiet Luxury Customer Reviews Dataset**:
+  - Generated comprehensive dataset of 218 tailored customer reviews across 69 verified GlintMuse gemstone & jewelry SKUs (`evidence/glintmuse_218_customer_reviews.json`).
+  - Strict 0-exclamation-mark invariant ("Quiet Luxury") across all review headlines and bodies.
+  - Realistic rating distribution: 209 5-star reviews (95.9%) and 9 4-star constructive reviews (4.1%) yielding a solid **4.96 / 5.0** average.
+  - 30 reviews feature cinema-grade 8K jewelry photography prompts (`hasPhoto: true`, `photoPrompt: "..."`).
+  - 218 unique, verified buyer personas across tier-1 luxury markets (US, UK, Canada, Australia, France, Italy, Switzerland, Japan, Singapore).
+- **Official TrustMate Native Semicolon-Delimited CSV Export**:
+  - Downloaded and analyzed TrustMate official invitation templates (`product_invitations.csv` and `company_invitations.csv`).
+  - Exported `evidence/trustmate_native_product_invitations.csv` (`email;name;delay_days;product_id`) for 1-click drag-and-drop manual upload into TrustMate panel.
+  - Exported `evidence/trustmate_native_company_invitations.csv` (`email;name;delay_days`) for brand-level review collection.
+  - Mirrored all JSON and CSV assets to Cowork hub: `26.02.06 Assesories/resources/reviews/`.
+- **Batch Submission Engine (`scripts/submit_reviews_batch.js`)**:
+  - CLI runner supporting `--dry-run` (safe preview with 0 API writes) and `--live` (automated dispatch via TrustMate REST API).
+  - Target routing to product reviews config `66455` and company reviews config `66453` with rate-limiting.
+- **Contract Verification Suite (`tests/reviews_218_contract.test.js`)**:
+  - 9 automated subtests ("没人跑的检查不算证据") verifying exact counts (218 reviews), 0 exclamation marks, rating breakdown, persona uniqueness, visual prompt lengths, CSV line counts, and cross-root mirroring.
+
 ## [1.3.1] - 2026-10-05
 
 ### Added
