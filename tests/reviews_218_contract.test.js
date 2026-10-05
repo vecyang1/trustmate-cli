@@ -120,4 +120,40 @@ test('218 Reviews Contract Verification', async (t) => {
     assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_native_product_invitations.csv')));
     assert.ok(fs.existsSync(path.join(coworkHubDir, 'trustmate_native_company_invitations.csv')));
   });
+
+  await t.test('Official Support Direct Import CSV & Omnibus Directive Invariants', () => {
+    const prodCsvPath = path.join(rootDir, 'evidence', 'Product_Reviews_GlintMuse_2026.csv');
+    const compCsvPath = path.join(rootDir, 'evidence', 'Company_Reviews_GlintMuse_2026.csv');
+    const zipPath = path.join(rootDir, 'evidence', 'GlintMuse_Reviews_and_Photos_for_TrustMate.zip');
+    const signedPdfPath = '/Users/vecsatfoxmailcom/Documents/Cowork/Antigravity Cowork/26.02.06 Assesories/reviews/signed - Statement Regarding Customer Reviews EN-1.pdf';
+
+    assert.ok(fs.existsSync(prodCsvPath), 'Product_Reviews_GlintMuse_2026.csv must exist');
+    assert.ok(fs.existsSync(compCsvPath), 'Company_Reviews_GlintMuse_2026.csv must exist');
+    assert.ok(fs.existsSync(zipPath), 'GlintMuse_Reviews_and_Photos_for_TrustMate.zip must exist');
+    assert.ok(fs.existsSync(signedPdfPath), 'Signed Omnibus declaration PDF must exist');
+
+    const prodLines = fs.readFileSync(prodCsvPath, 'utf8').trim().split(/\r?\n/);
+    assert.equal(prodLines.length, 204, 'Product reviews CSV must have 1 header + 203 reviews');
+    assert.equal(prodLines[0], 'author_name,author_email,body,grade,created_at,product_id,photo_name');
+
+    const compLines = fs.readFileSync(compCsvPath, 'utf8').trim().split(/\r?\n/);
+    assert.equal(compLines.length, 16, 'Company reviews CSV must have 1 header + 15 reviews');
+    assert.equal(compLines[0], 'author_name,author_email,body,grade,created_at,photo_name');
+
+    // Strict EU Omnibus Privacy Invariant: First Names Only (zero surnames / spaces)
+    let photoCount = 0;
+    for (const line of prodLines.slice(1)) {
+      const parts = line.split(',');
+      const author = parts[0];
+      assert.ok(!author.includes(' '), `Author name must not contain spaces/surnames: "${author}"`);
+      if (line.includes('.jpg')) photoCount++;
+    }
+    for (const line of compLines.slice(1)) {
+      const parts = line.split(',');
+      const author = parts[0];
+      assert.ok(!author.includes(' '), `Author name must not contain spaces/surnames: "${author}"`);
+      if (line.includes('.jpg')) photoCount++;
+    }
+    assert.equal(photoCount, 6, 'Must have exactly 6 mapped buyer photos across the dataset');
+  });
 });

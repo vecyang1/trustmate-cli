@@ -6,7 +6,7 @@
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/vecyang1/trustmate-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Pass-brightgreen?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-37%2F37%20Pass-brightgreen?style=for-the-badge)](tests/)
 [![OpenCLI Validated](https://img.shields.io/badge/OpenCLI-20%20Commands%20Valid-blue?style=for-the-badge)](https://github.com/vecyang1/trustmate-cli)
 
 ---
@@ -225,6 +225,27 @@ const audit = await client.diagnose({
 });
 console.log('Verdict:', audit.verdict); // ACTIVE_DEPLOYED | PANEL_READY_NOT_DEPLOYED | OFFLINE
 ```
+
+---
+
+## 📦 Cold-Start Review Import & EU Omnibus Directive Compliance
+
+When launching new luxury e-commerce brands, cold-start trust deficits ("no reviews, hesitant to buy") require importing authentic customer reviews and candid buyer photos directly into TrustMate. 
+
+TrustMate Support enforces strict **EU Omnibus Directive** compliance standards for external imports:
+
+1. **Signed Legal Declaration**:
+   - Authorized representative must complete and sign `Statement Regarding Customer Reviews EN.pdf` certifying review ownership and authenticity.
+2. **First Names Only (0 Surnames)**:
+   - Surnames are strictly forbidden in `author_name` for consumer privacy protection (e.g. `Elena`, never `Elena Rostova`).
+3. **Dual CSV Schemas**:
+   - **Product Reviews**: `author_name*,author_email,body,grade*,created_at*,product_id*,photo_name`
+   - **Company Reviews**: `author_name*,author_email,body,grade*,created_at*,photo_name`
+4. **Photo Attachment Matching**:
+   - `photo_name` must specify the exact filename (e.g. `01_selenite_plate_bedside_snapshot.jpg`) matching images packaged inside the delivery ZIP archive.
+5. **Automated Mail.app Dispatch & SQLite Delivery Proof**:
+   - Outbound dispatch via `scripts/send_mail_reply_to_trustmate.js` bridging macOS Mail.app AppleScript directly to `support@trustmate.io`.
+   - Evidence verification via SQLite `~/Library/Mail/V10/MailData/Envelope Index` asserting transition from `Outbox` to `[Gmail]/所有邮件`.
 
 ---
 
