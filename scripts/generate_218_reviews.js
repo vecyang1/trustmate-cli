@@ -508,6 +508,22 @@ for (let i = 0; i < TOTAL_REVIEWS; i++) {
   headline = headline.replace(/!/g, '.');
   body = body.replace(/!/g, '.');
 
+  // Map rendered buyer show photos to hero products
+  let photoName = '';
+  if (sku === 'GM-ACC-SELENITE-01' && !reviews.some(r => r.photoName === '01_selenite_plate_bedside_snapshot')) {
+    photoName = '01_selenite_plate_bedside_snapshot';
+  } else if (sku === 'GM-JWL-NECK-SPINEL-01' && !reviews.some(r => r.photoName === '02_spinel_pearl_mirror_selfie')) {
+    photoName = '02_spinel_pearl_mirror_selfie';
+  } else if (sku === 'GM-JWL-BRAC-RUTIL-01' && !reviews.some(r => r.photoName === '03_golden_rutilated_quartz_workdesk')) {
+    photoName = '03_golden_rutilated_quartz_workdesk';
+  } else if (sku === 'GM-JWL-PEND-CITRINE-01' && !reviews.some(r => r.photoName === '04_raw_citrine_pendant_unboxing')) {
+    photoName = '04_raw_citrine_pendant_unboxing';
+  } else if (sku === 'GM-SET-DUO-01' && !reviews.some(r => r.photoName === '05_velvet_pouch_gift_set_armchair')) {
+    photoName = '05_velvet_pouch_gift_set_armchair';
+  } else if (sku === 'GM-JWL-BRAC-CHAKRA-01' && !reviews.some(r => r.photoName === '06_chakra_bracelet_golden_hour_car')) {
+    photoName = '06_chakra_bracelet_golden_hour_car';
+  }
+
   reviews.push({
     id: `gm-rev-${String(i + 1).padStart(3, '0')}`,
     author: buyer.name,
@@ -523,7 +539,8 @@ for (let i = 0; i < TOTAL_REVIEWS; i++) {
     productUrl,
     headline,
     body,
-    hasPhoto: Boolean(photoPrompt),
+    hasPhoto: Boolean(photoPrompt || photoName),
+    photoName: photoName || '',
     photoPrompt,
     tags: [
       rating === 5 ? 'five-star' : 'four-star',
@@ -572,6 +589,32 @@ const reviewsCsvRows = reviews.map(r => {
 const reviewsCsvPath = path.join(__dirname, '../evidence/trustmate_glintmuse_218_reviews.csv');
 fs.writeFileSync(reviewsCsvPath, reviewsCsvHeader + reviewsCsvRows, 'utf8');
 console.log(`Reviews CSV saved to: ${reviewsCsvPath}`);
+
+// Save Reviews to Upload for TrustMate Support (matches Klaudia's guidelines: photo column with image name without extension)
+const uploadCsvHeader = 'ReviewId,Date,Rating,Author,Email,City,Country,VerifiedBuyer,ProductSKU,ProductName,ProductId,Headline,Body,Photo\n';
+const uploadCsvRows = reviews.map(r => {
+  const escapeCsv = (str) => `"${(str || '').replace(/"/g, '""')}"`;
+  return [
+    r.id,
+    r.date,
+    r.rating,
+    escapeCsv(r.author),
+    escapeCsv(r.email),
+    escapeCsv(r.city),
+    escapeCsv(r.country),
+    r.verifiedBuyer ? 'TRUE' : 'FALSE',
+    escapeCsv(r.sku || 'STORE'),
+    escapeCsv(r.productName),
+    r.productId || '',
+    escapeCsv(r.headline),
+    escapeCsv(r.body),
+    escapeCsv(r.photoName)
+  ].join(',');
+}).join('\n');
+
+const uploadCsvPath = path.join(__dirname, '../evidence/Reviews_to_Upload_GlintMuse_2026.csv');
+fs.writeFileSync(uploadCsvPath, uploadCsvHeader + uploadCsvRows, 'utf8');
+console.log(`Support Upload CSV saved to: ${uploadCsvPath}`);
 
 // Save TrustMate Customer Invitations CSV (ready for manual import in TrustMate panel)
 // Columns: Email, Name, ProductId, DelayDays
