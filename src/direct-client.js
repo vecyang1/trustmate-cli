@@ -4,6 +4,7 @@
  */
 
 import { assertSafeRoute, SecurityRouteDeniedError, SecurityGateError } from './security-guard.js';
+import { VERSION } from './version.js';
 
 export { SecurityRouteDeniedError, SecurityGateError };
 
@@ -40,7 +41,7 @@ export class TrustMateDirectClient {
     const headers = {
       'Accept': 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
-      'User-Agent': 'TrustMate-CLI/1.3.0',
+      'User-Agent': `TrustMate-CLI/${VERSION}`,
       ...(this.cookie ? { 'Cookie': this.cookie } : {}),
       ...(this.csrfToken ? { 'X-CSRF-Token': this.csrfToken } : {}),
       ...(init.headers || {})

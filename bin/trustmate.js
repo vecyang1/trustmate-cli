@@ -3,8 +3,7 @@
 import { TrustMateClient } from '../src/index.js';
 import { formatOutput } from '../src/formatters.js';
 import { assertSafeCliAction, SecurityRouteDeniedError } from '../src/security-guard.js';
-
-const VERSION = '1.3.0';
+import { VERSION } from '../src/version.js';
 
 function printHelp() {
   console.log(`

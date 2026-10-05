@@ -344,44 +344,74 @@ export class TrustMateOpenCLIClient {
 
     if (sendAfterVal !== undefined || remindAfterVal !== undefined) {
       try {
-        const urlRes = await this.execFile(this.opencliPath, ['browser', this.session, 'eval', 'window.location.href']);
-        const currentUrl = urlRes.stdout.trim();
-        const targetUrl = `https://trustmate.io/en/panel/collecting-reviews/config/${configId}`;
-        if (!currentUrl.includes(`/collecting-reviews/config/${configId}`)) {
-          await this.execFile(this.opencliPath, ['browser', this.session, 'open', targetUrl]);
-          await new Promise(r => setTimeout(r, 2000));
-        }
+        const updateScript = `(async () => {
+          const configId = ${JSON.stringify(configId)};
+          const accountId = ${JSON.stringify(accountId)};
+          const sendAfter = ${JSON.stringify(sendAfterVal)};
+          const remindAfter = ${JSON.stringify(remindAfterVal)};
 
-        if (sendAfterVal !== undefined) {
-          const findInpRes = await this.execFile(this.opencliPath, ['browser', this.session, 'find', '--css', "input[name*='select-']"]);
-          const inpData = JSON.parse(findInpRes.stdout.trim());
-          const targetInp = (inpData.entries || []).find(e => e.attrs?.id === ':r3:' || e.attrs?.name?.includes(':r2:')) || (inpData.entries || [])[0];
-          if (targetInp && targetInp.ref) {
-            await this.execFile(this.opencliPath, ['browser', this.session, 'click', String(targetInp.ref)]);
-            await new Promise(r => setTimeout(r, 400));
+          // Extract CSRF token from cookie
+          const cookieMatch = document.cookie.match(/csrf-token=([^;]+)/);
+          const csrfToken = cookieMatch ? decodeURIComponent(cookieMatch[1]) : '';
 
-            await this.execFile(this.opencliPath, ['browser', this.session, 'eval', `(() => {
-              const list = document.getElementById('select-list-:r2:');
-              if (list) list.scrollTop = 35;
-            })()`]);
-            await new Promise(r => setTimeout(r, 300));
-
-            const findOptRes = await this.execFile(this.opencliPath, ['browser', this.session, 'find', '--role', 'option']);
-            const optData = JSON.parse(findOptRes.stdout.trim());
-            const targetOpt = (optData.entries || []).find(e => String(e.text).trim() === String(sendAfterVal));
-            if (targetOpt && targetOpt.ref) {
-              await this.execFile(this.opencliPath, ['browser', this.session, 'click', String(targetOpt.ref)]);
-              await new Promise(r => setTimeout(r, 400));
+          // 1. Fetch current config details
+          let currentConfig = null;
+          try {
+            const getRes = await fetch('/panel/api/account/' + accountId + '/invitation_config/' + configId);
+            if (getRes.ok) {
+              currentConfig = await getRes.json();
             }
-          }
-        }
+          } catch {}
 
-        const findSaveRes = await this.execFile(this.opencliPath, ['browser', this.session, 'find', '--role', 'button', '--text', 'Save']);
-        const saveData = JSON.parse(findSaveRes.stdout.trim());
-        const saveBtn = (saveData.entries || []).find(e => e.text === 'Save') || (saveData.entries || [])[0];
-        if (saveBtn && saveBtn.ref) {
-          await this.execFile(this.opencliPath, ['browser', this.session, 'click', String(saveBtn.ref)]);
-          await new Promise(r => setTimeout(r, 3500));
+          if (!currentConfig) {
+            return { ok: false, error: 'Could not fetch current config' };
+          }
+
+          // 2. Prepare mutated config payload filtering out read-only/metadata fields
+          const allowedKeys = [
+            'name', 'remindAfter', 'remindersCount', 'sendAfter', 'senderName',
+            'emailMaxProducts', 'title', 'lead', 'barImageEnabled', 'primaryColor',
+            'fontColor', 'emailThemeName', 'secondaryColor', 'backgroundColor',
+            'backgroundImageEnabled', 'topText', 'bottomText', 'signature',
+            'footer', 'reminder1Title', 'reminder2Title', 'smsBody1', 'survey',
+            'ctaImage', 'ctaLabel', 'emailFont', 'invitationProductsPriorityMode',
+            'formConfig', 'steps'
+          ];
+
+          const updatedConfig = {};
+          for (const k of allowedKeys) {
+            if (currentConfig[k] !== undefined) updatedConfig[k] = currentConfig[k];
+          }
+          if (sendAfter !== undefined && sendAfter !== null) updatedConfig.sendAfter = sendAfter;
+          if (remindAfter !== undefined && remindAfter !== null) updatedConfig.remindAfter = remindAfter;
+          if (csrfToken) updatedConfig._token = csrfToken;
+
+          // 3. Dispatch POST with FormData
+          const fd = new FormData();
+          if (csrfToken) fd.append('_token', csrfToken);
+          fd.append('config', JSON.stringify(updatedConfig));
+
+          const postRes = await fetch('/panel/api/account/' + accountId + '/invitation_config/' + configId, {
+            method: 'POST',
+            body: fd
+          });
+
+          const postData = await postRes.json();
+          return { ok: postRes.ok, status: postRes.status, data: postData };
+        })()`;
+
+        const res = await this.execFile(this.opencliPath, ['browser', this.session, 'eval', updateScript]);
+        const parsed = JSON.parse(res.stdout.trim());
+        if (!parsed.ok) {
+          // If direct API returned error, also attempt clicking save button on config page if present
+          const clickSaveScript = `(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const saveBtn = buttons.find(b => b.innerText.trim() === 'SAVE');
+            if (saveBtn) { saveBtn.click(); return true; }
+            return false;
+          })()`;
+          await this.execFile(this.opencliPath, ['browser', this.session, 'eval', clickSaveScript]);
+          await new Promise(r => setTimeout(r, 1500));
         }
       } catch (err) {
         // Fallback error handling

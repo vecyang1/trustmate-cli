@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-10-05
+
+### Added
+- **Automated SKU & Product Catalog Synchronization**:
+  - Validated Google Shopping RSS 2.0 product feed live at `/wp-json/glintmuse/v1/trustmate-product-feed` (and alias `/product-feed.xml`).
+  - Implemented and triggered catalog ingestion via TrustMate internal feed parser (`POST /panel/api/account/27487/parse_feed`), synchronizing 100% of the storefront catalog (all 72 SureCart products and SKUs ingested into TrustMate account 27487).
+  - Verified catalog query `trustmate products 27487` returns all products with exact IDs and names.
+- **21-Day Review Delay Alignment**:
+  - Synchronized TrustMate panel invitation config `66453` (Store feedback) and `66455` (Product feedback) to `21 days` post-order (`sendAfter: 21`, `remindAfter: 7`), accommodating the 2-week international logistics and unboxing period.
+- **PDP Reversible Social Proof Preservation**:
+  - Preserved legacy mock social proof logic in `glintmuse-product-social-proof.php` while reversibly hiding it (`const REVERSIBLE_HIDDEN = true;` and `glintmuse_enable_legacy_social_proof` filter hook), eliminating visual clashing above Add to Cart without ghost logic or permanent deletion.
+- **E2E Visual & Conversion Proof**:
+  - Embedded TrustMate `badger2` rating badge above Add to Cart and `productFerret2` carousel below product details.
+  - Verified 100% clean checkout exclusion on storefront checkout (`/checkout/`) with zero widget interference.
+  - Captured desktop and mobile visual proof in `evidence/screenshots/`.
+
 ## [1.3.0] - 2026-10-04
 
 ### Added
