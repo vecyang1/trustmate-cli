@@ -141,19 +141,67 @@ test('218 Reviews Contract Verification', async (t) => {
     assert.equal(compLines[0], 'author_name,author_email,body,grade,created_at,photo_name');
 
     // Strict EU Omnibus Privacy Invariant: First Names Only (zero surnames / spaces)
+    // AND Strict Anti-Duplication Invariants: 100% Unique Authors and 100% Unique Bodies across all CSV rows
     let photoCount = 0;
+    const prodAuthors = new Set();
+    const prodBodies = new Set();
+    const allCsvAuthors = new Set();
+    const allCsvBodies = new Set();
+
+    function parseCsvLine(line) {
+      // Parse CSV line handling quoted fields
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          inQuotes = !inQuotes;
+        } else if (c === ',' && !inQuotes) {
+          result.push(cur);
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur);
+      return result;
+    }
+
     for (const line of prodLines.slice(1)) {
-      const parts = line.split(',');
+      const parts = parseCsvLine(line);
       const author = parts[0];
+      const body = parts[2];
       assert.ok(!author.includes(' '), `Author name must not contain spaces/surnames: "${author}"`);
+      assert.ok(!body.includes('!'), `CSV body must not contain exclamation marks: "${body}"`);
+      prodAuthors.add(author);
+      prodBodies.add(body);
+      allCsvAuthors.add(author);
+      allCsvBodies.add(body);
       if (line.includes('.jpg')) photoCount++;
     }
+
+    const compAuthors = new Set();
+    const compBodies = new Set();
     for (const line of compLines.slice(1)) {
-      const parts = line.split(',');
+      const parts = parseCsvLine(line);
       const author = parts[0];
+      const body = parts[2];
       assert.ok(!author.includes(' '), `Author name must not contain spaces/surnames: "${author}"`);
+      assert.ok(!body.includes('!'), `CSV body must not contain exclamation marks: "${body}"`);
+      compAuthors.add(author);
+      compBodies.add(body);
+      allCsvAuthors.add(author);
+      allCsvBodies.add(body);
       if (line.includes('.jpg')) photoCount++;
     }
+
     assert.equal(photoCount, 6, 'Must have exactly 6 mapped buyer photos across the dataset');
+    assert.equal(prodAuthors.size, 203, 'All 203 product review authors must be unique first names');
+    assert.equal(compAuthors.size, 15, 'All 15 company review authors must be unique first names');
+    assert.equal(allCsvAuthors.size, 218, 'All 218 CSV review authors must be 100% unique across the entire dataset');
+    assert.equal(prodBodies.size, 203, 'All 203 product review bodies must be 100% unique without duplication');
+    assert.equal(compBodies.size, 15, 'All 15 company review bodies must be 100% unique without duplication');
+    assert.equal(allCsvBodies.size, 218, 'All 218 CSV review bodies must be 100% unique across the entire dataset');
   });
 });
