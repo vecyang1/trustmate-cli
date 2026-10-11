@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-10-11
+
+### Dispatched
+- **Official Review Dataset Resubmission via Mail.app**:
+  - Independent subagent pre-flight audit passed (100% verification across all 4 attachments: 203 product reviews, 15 company reviews, signed Omnibus declaration, and complete ZIP package with 6 buyer show photos).
+  - Outbound email dispatched from `user@example.com` to `support@example.com` (ROWID `103197`) with updated concise closing.
+
+## [2026-10-10] - 2026-10-10
+
+### Maintenance
+- Harden contract test with 100% CSV author and body uniqueness assertions (`5d251c5`)
+
 ## [1.3.4] - 2026-10-07
 
 ### Fixed & Overhauled
