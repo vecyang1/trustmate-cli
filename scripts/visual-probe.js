@@ -109,7 +109,7 @@ function redactString(str) {
     }
   }
   // Redact any email matching operator identity
-  out = out.replace(/123hxsmyxh@gmail\.com/gi, '<operator-email>');
+  out = out.replace(/[a-zA-Z0-9._%+-]+@(?:gmail|trustmate)\.[a-z]{2,}/gi, '<operator-email>');
   return out;
 }
 

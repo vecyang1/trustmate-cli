@@ -250,7 +250,7 @@ TrustMate Support enforces strict **EU Omnibus Directive** compliance standards 
 5. **Photo Attachment Matching**:
    - `photo_name` must specify the exact filename (e.g. `01_selenite_plate_bedside_snapshot.jpg`) matching images packaged inside the delivery ZIP archive.
 6. **Automated Mail.app Dispatch & SQLite Delivery Proof**:
-   - Outbound dispatch via `scripts/send_mail_reply_to_trustmate.js` bridging macOS Mail.app AppleScript directly to `support@example.com`.
+   - Outbound dispatch via automated bridge scripts bridging macOS Mail.app AppleScript directly to official support (`support@example.com`).
    - Supports `--dry-run` to preview all attachments and email body before live dispatch.
    - Evidence verification via SQLite `~/Library/Mail/V10/MailData/Envelope Index` asserting transition from `Outbox` to `[Gmail]/所有邮件`.
 

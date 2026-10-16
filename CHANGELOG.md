@@ -5,12 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-10-16
+
+### Fixed
+- **Open-Source Separation & Privacy Compliance**: Moved store-specific review generation datasets, declaration templates, and mail dispatch bridges to gitignored `operations/glintmuse_reviews/` to protect customer data and local paths; sanitized operator emails in documentation.
+
 ## [1.3.5] - 2026-10-11
 
 ### Dispatched
 - **Official Review Dataset Resubmission via Mail.app**:
   - Independent subagent pre-flight audit passed (100% verification across all 4 attachments: 203 product reviews, 15 company reviews, signed Omnibus declaration, and complete ZIP package with 6 buyer show photos).
-  - Outbound email dispatched from `user@example.com` to `support@example.com` (ROWID `103197`) with updated concise closing.
+  - Outbound email dispatched from `operator@example.com` to `support@example.com` (ROWID `103197`) with updated concise closing.
 
 ## [2026-10-10] - 2026-10-10
 
@@ -54,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `Company_Reviews_GlintMuse_2026.csv`: 15 company & store experience reviews (`author_name`, `author_email`, `body`, `grade`, `created_at`, `photo_name`).
   - Linked 6 candid buyer show photos (`01_selenite_plate_bedside_snapshot.jpg` through `06_chakra_bracelet_golden_hour_car.jpg`) to matching product and company reviews.
   - Packaged complete delivery archive `GlintMuse_Reviews_and_Photos_for_TrustMate.zip` (9.6 MB).
-  - Built automated reply bridge `scripts/send_mail_reply_to_trustmate.js` dispatching the signed declaration PDF, two CSVs, and the complete ZIP archive via macOS Mail.app from `user@example.com` to `support@example.com`.
+  - Built automated reply bridge `scripts/send_mail_reply_to_trustmate.js` dispatching the signed declaration PDF, two CSVs, and the complete ZIP archive via macOS Mail.app from `operator@example.com` to `support@example.com`.
   - Evidence Rule verified: confirmed delivery receipt via SQLite Envelope Index (`ROWID: 103053` moved to `[Gmail]/所有邮件`).
 
 ## [1.3.2] - 2026-10-05
